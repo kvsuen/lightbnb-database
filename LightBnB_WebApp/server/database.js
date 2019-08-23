@@ -1,6 +1,4 @@
 const { Pool } = require('pg');
-const properties = require('./json/properties.json');
-const users = require('./json/users.json');
 
 const pool = new Pool({
   user: 'vagrant',
@@ -9,7 +7,11 @@ const pool = new Pool({
   database: 'lightbnb'
 });
 
-pool.connect();
+const db = {
+  query: (text, params, callback) => {
+    return pool.query(text, params, callback);
+  },
+};
 
 /// Users
 
@@ -19,7 +21,7 @@ pool.connect();
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithEmail = email => {
-  return pool.query(
+  return db.query(
     `
     SELECT * FROM users WHERE email = $1
     `, [email])
@@ -34,7 +36,7 @@ exports.getUserWithEmail = getUserWithEmail;
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithId = function(id) {
-  return pool.query(
+  return db.query(
     `
     SELECT * FROM users WHERE id = $1
     `, [id])
@@ -49,7 +51,7 @@ exports.getUserWithId = getUserWithId;
  * @return {Promise<{}>} A promise to the user.
  */
 const addUser = function(user) {
-  return pool.query(
+  return db.query(
     `
     INSERT INTO users(name, password, email) VALUES($1, $2, $3) RETURNING *;
     `, [user.name, user.password, user.email])
@@ -80,7 +82,7 @@ const getAllReservations = function(guest_id, limit = 10) {
   `;
   const values = [guest_id, limit];
 
-  return pool
+  return db
     .query(query, values)
     .then(res => res.rows)
     .catch(err => null);
@@ -149,7 +151,7 @@ const getAllProperties = function(options, limit = 10) {
   LIMIT $${queryParams.length};
   `;
   
-  return pool
+  return db
     .query(queryString, queryParams)
     .then(res => res.rows);
 };
@@ -161,7 +163,7 @@ exports.getAllProperties = getAllProperties;
  * @return {Promise<{}>} A promise to the property.
  */
 const addProperty = function(property) {
-  return pool.query(
+  return db.query(
     `
     INSERT INTO properties (title, description, owner_id, cover_photo_url, thumbnail_photo_url, cost_per_night, parking_spaces, number_of_bathrooms, number_of_bedrooms, province, city, country, street, post_code) 
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *;
